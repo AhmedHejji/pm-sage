@@ -1,0 +1,99 @@
+## setting up the terminal
+
+gcloud auth login
+gcloud config set project qwiklabs-gcp-03-f29fe995937e
+
+
+## enabling the GCP API's
+
+gcloud services enable \
+  aiplatform.googleapis.com \
+  firestore.googleapis.com \
+  storage.googleapis.com
+
+gcloud services enable \
+  cloudfunctions.googleapis.com \
+  cloudbuild.googleapis.com \
+  run.googleapis.com \
+  artifactregistry.googleapis.com  
+
+## downloading the corpus data
+
+cd data
+curl -o /Users/ahmed/vscodeProjects/pm-sage/data/scrum-guide.pdf https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-US.pdf
+curl -o /Users/ahmed/vscodeProjects/pm-sage/data/openpm-bok.pdf https://openpm.org/fileadmin/OpenPM/Downloads/OpenPM_Body_of_Knowledge_en.pdf
+
+## setting up a python virtual environment locally to pre-process data
+
+python3 -m venv venv
+
+----
+
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -r backend/requirements.txt
+
+## extracting text into .txt files
+
+python preprocess/extract_text.py
+
+## tokenizing extracted text
+
+python preprocess/tokenize_chunks.py
+
+## embed and upload data
+
+python backend/embed_and_upload.py
+
+## create firestore
+
+gcloud firestore databases create \
+  --database="(default)" \
+  --location="us-east1" \
+  --type="firestore-native"
+
+gcloud firestore databases describe \
+  --project=qwiklabs-gcp-03-f29fe995937e \
+  --database="(default)"
+
+## deploy cloud function
+
+gcloud auth application-default login --project=qwiklabs-gcp-03-f29fe995937e
+python -c "from google.auth import default; print(default())"
+
+./deploy/deploy_gcf.sh
+
+## test deployed function (through CLI) using the URL & Cloud Function Name
+
+curl -X POST https://pm-sage-rag-u2ujkkk2aa-ue.a.run.app/generate \
+  -H "Content-Type: application/json" \
+  -d '{"query":"What steps for risk mitigation of delayed vendor deliverables?"}'
+
+gcloud functions call pm-sage-rag \
+  --region=us-east1 \
+  --gen2 \
+  --data '{"query":"What steps should I take if a vendor milestone is 2 weeks late?"}'
+
+
+gcloud functions call pm-sage-rag \
+  --region=us-east1 \
+  --gen2 \
+  --data '{"query":"How should I handle a conflict between stakeholders on scope?"}'
+
+
+gcloud functions call pm-sage-rag \
+  --region=us-east1 \
+  --gen2 \
+  --data '{"query":"What’s the best practice when a user story is blocked for 3 sprints?"}'
+
+
+## deploy GUI
+
+cd ui
+npm install
+npm install react-markdown remark-gfm
+npm run build
+cd ..
+
+./deploy/deploy_cr.sh

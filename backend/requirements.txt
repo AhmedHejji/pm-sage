@@ -1,0 +1,7 @@
+Flask==2.3.2
+google-cloud-storage==2.19.0
+google-cloud-aiplatform>=1.92.0   # includes the `vertexai` SDK
+google-cloud-firestore==2.11.0
+faiss-cpu==1.7.4
+numpy
+google-genai           # Gen AI SDK providing genai.Client

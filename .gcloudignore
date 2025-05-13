@@ -1,0 +1,15 @@
+# Python artifacts
+venv/
+__pycache__/
+*.pyc
+
+# Build & dev files
+preprocess/
+data/
+deploy/
+commands.txt
+
+# Misc
+.DS_Store
+.git/
+.gitignore
